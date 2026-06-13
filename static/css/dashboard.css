@@ -1,0 +1,173 @@
+.welcome-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px;
+}
+
+.welcome-card .card-body {
+    padding: 25px 30px;
+}
+
+.welcome-card h4 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.level-badge {
+    text-align: right;
+    min-width: 150px;
+}
+
+.level-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.level-title {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.level-number {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.exp-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.exp-progress {
+    height: 100%;
+    background: white;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.checkin-card {
+    background: white;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+}
+
+.checkin-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.checkin-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.checkin-info {
+    flex: 1;
+}
+
+.checkin-info h6 {
+    font-weight: 600;
+}
+
+.checkin-btn {
+    border-radius: 20px;
+    padding: 5px 15px;
+    font-size: 0.85rem;
+}
+
+.stats-card .stat-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.stats-card .stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    margin-right: 15px;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.achievement-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: #fff9e6;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.achievement-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 12px;
+}
+
+.achievement-info strong {
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .welcome-card .card-body {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .level-badge {
+        text-align: center;
+        margin-top: 15px;
+    }
+
+    .level-info {
+        justify-content: center;
+    }
+}

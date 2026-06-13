@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仪表盘 - 人生努力可视化系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .nav-brand .logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-brand .logo i {
+            color: white;
+            font-size: 20px;
+        }
+
+        .nav-brand span {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-menu a {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 0;
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-menu a:hover, .nav-menu a.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-avatar i {
+            color: white;
+            font-size: 18px;
+        }
+
+        .logout-btn {
+            background: #f5f7fa;
+            border: none;
+            color: #666;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #ff5252;
+            color: white;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 25px;
+        }
+
+        .welcome-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .welcome-text h1 {
+            font-size: 26px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .welcome-text p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .level-card {
+            background: white;
+            border-radius: 16px;
+            padding: 18px 25px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .level-badge {
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 170, 0, 0.3);
+        }
+
+        .level-info h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #333;
+        }
+
+        .exp-bar-container {
+            width: 180px;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .exp-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .exp-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+        }
+
+        .card-header h2 i {
+            color: #667eea;
+        }
+
+        .card-body {
+            padding: 18px 20px;
+        }
+
+        /* 右侧栏 */
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 小日历 */
+        .mini-calendar {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            padding: 16px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .calendar-month {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 6px;
+        }
+
+        .calendar-nav button {
+            background: #f5f7fa;
+            border: none;
+            color: #666;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .calendar-nav button:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+        }
+
+        .calendar-weekday {
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+            padding: 6px 0;
+            font-weight: 500;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+
+        .calendar-day:hover {
+            background: #f5f7fa;
+        }
+
+        .calendar-day.today {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .calendar-day.other-month {
+            opacity: 0.3;
+        }
+
+        .calendar-day .day-number {
+            font-size: 12px;
+        }
+
+        .calendar-day .day-exp {
+            font-size: 8px;
+            color: #4CAF50;
+            font-weight: 600;
+        }
+
+        .calendar-day.today .day-exp {
+            color: rgba(255,255,255,0.9);
+        }
+
+        /* 打卡卡片 */
+        .checkin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .checkin-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .checkin-card:hover {
+            background: #f0f2f5;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .checkin-card.checked {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%);
+            border-color: rgba(76, 175, 80, 0.3);
+        }
+
+        .checkin-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+
+        .checkin-info {
+            flex: 1;
+        }
+
+        .checkin-info h4 {
+            font-size: 14px;
+            margin-bottom: 2px;
+            color: #333;
+        }
+
+        .checkin-info p {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .checkin-btn {
+            padding: 7px 14px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .checkin-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .checkin-btn.primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .checkin-btn.success {
+            background: #e8f5e9;
+            color: #4CAF50;
+        }
+
+        /* 雷达图 */
+        #radar-chart {
+            height: 280px;
+        }
+
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-card i {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .stat-card.streak i { color: #ff9800; }
+        .stat-card.total i { color: #4CAF50; }
+        .stat-card.week i { color: #2196F3; }
+        .stat-card.achievement i { color: #9c27b0; }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* 成就列表 */
+        .achievement-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .achievement-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .achievement-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+        }
+
+        .achievement-info h4 {
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .achievement-info p {
+            font-size: 10px;
+            color: #888;
+        }
+
+        .no-achievement {
+            text-align: center;
+            padding: 20px;
+            color: #aaa;
+            font-size: 13px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 14px 22px;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .toast.error {
+            background: #ff5252;
+        }
+
+        .toast.success {
+            background: #4CAF50;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .right-column {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 10px 15px;
+            }
+
+            .nav-menu {
+                display: none;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .welcome-section {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .checkin-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .right-column {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/dashboard" class="nav-brand">
+            <div class="logo"><i class="fas fa-rocket"></i></div>
+            <span>人生努力可视化系统</span>
+        </a>
+        <ul class="nav-menu">
+            <li><a href="/dashboard" class="active"><i class="fas fa-home"></i> 首页</a></li>
+            <li><a href="/stats"><i class="fas fa-chart-bar"></i> 统计</a></li>
+            <li><a href="/achievements"><i class="fas fa-trophy"></i> 成就</a></li>
+            <li><a href="/notes"><i class="fas fa-sticky-note"></i> 笔记</a></li>
+            <li><a href="/goals"><i class="fas fa-bullseye"></i> 目标</a></li>
+        </ul>
+        <div class="nav-user">
+            <div class="user-avatar" id="userAvatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <button class="logout-btn" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> 退出</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="welcome-section">
+            <div class="welcome-text">
+                <h1>欢迎回来，<span id="user-nickname">用户</span>！</h1>
+                <p id="today-date"></p>
+            </div>
+            <div class="level-card">
+                <div class="level-badge" id="level-badge">1</div>
+                <div class="level-info">
+                    <h3 id="level-title">新手入门</h3>
+                    <div class="exp-bar-container">
+                        <div class="exp-bar" id="exp-bar" style="width: 0%"></div>
+                    </div>
+                    <p class="exp-text"><span id="current-exp">0</span> / <span id="next-level-exp">100</span> EXP</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="left-column">
+                <!-- 打卡 -->
+                <div class="card" style="margin-bottom: 20px;">
+                    <div class="card-header">
+                        <h2><i class="fas fa-check-circle"></i> 今日打卡</h2>
+                        <span id="checkin-count" style="color: #667eea; font-weight: 600;">0/7</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="checkin-grid" id="checkin-grid"></div>
+                    </div>
+                </div>
+
+                <!-- 雷达图 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-line"></i> 能力雷达图</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="radar-chart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-column">
+                <!-- 小日历 -->
+                <div class="mini-calendar">
+                    <div class="calendar-header">
+                        <span class="calendar-month" id="calendar-month"></span>
+                        <div class="calendar-nav">
+                            <button onclick="prevMonth()"><i class="fas fa-chevron-left"></i></button>
+                            <button onclick="nextMonth()"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendar-grid">
+                        <div class="calendar-weekday">日</div>
+                        <div class="calendar-weekday">一</div>
+                        <div class="calendar-weekday">二</div>
+                        <div class="calendar-weekday">三</div>
+                        <div class="calendar-weekday">四</div>
+                        <div class="calendar-weekday">五</div>
+                        <div class="calendar-weekday">六</div>
+                    </div>
+                </div>
+
+                <!-- 统计 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-pie"></i> 统计摘要</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="stats-grid">
+                            <div class="stat-card streak">
+                                <i class="fas fa-fire"></i>
+                                <div class="stat-value" id="streak-days">0</div>
+                                <div class="stat-label">连续打卡</div>
+                            </div>
+                            <div class="stat-card total">
+                                <i class="fas fa-check-double"></i>
+                                <div class="stat-value" id="total-checkins">0</div>
+                                <div class="stat-label">总打卡数</div>
+                            </div>
+                            <div class="stat-card week">
+                                <i class="fas fa-calendar-week"></i>
+                                <div class="stat-value" id="week-checkins">0</div>
+                                <div class="stat-label">本周打卡</div>
+                            </div>
+                            <div class="stat-card achievement">
+                                <i class="fas fa-medal"></i>
+                                <div class="stat-value" id="achievement-count">0</div>
+                                <div class="stat-label">已获成就</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 成就 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-trophy"></i> 最近成就</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="achievement-list" id="achievement-list">
+                            <div class="no-achievement">暂无成就，继续努力！</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        let radarChart = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadUserInfo();
+            await loadAbilities();
+            await loadTodayCheckins();
+            await loadStats();
+            await loadRecentAchievements();
+            await loadCalendarData();
+            initRadarChart();
+            updateDate();
+        });
+
+        function updateDate() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            document.getElementById('today-date').textContent = now.toLocaleDateString('zh-CN', options);
+        }
+
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/auth/profile');
+                const data = await response.json();
+                if (data.user) {
+                    document.getElementById('user-nickname').textContent = data.user.nickname || data.user.username;
+                    document.getElementById('level-badge').textContent = data.user.level;
+                    document.getElementById('level-title').textContent = data.user.level_title;
+                    document.getElementById('current-exp').textContent = data.user.current_exp || 0;
+                    document.getElementById('next-level-exp').textContent = data.user.next_level_exp || 100;
+                    document.getElementById('exp-bar').style.width = (data.user.exp_progress || 0) + '%';
+
+                    if (data.user.avatar) {
+                        document.getElementById('userAvatar').innerHTML = `<img src="${data.user.avatar}" alt="头像">`;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load user info:', error);
+            }
+        }
+
+        async function loadAbilities() {
+            try {
+                const response = await fetch('/api/abilities');
+                const data = await response.json();
+                const container = document.getElementById('checkin-grid');
+
+                container.innerHTML = data.abilities.map(a => `
+                    <div class="checkin-card" data-ability="${a.id}">
+                        <div class="checkin-icon" style="background-color: ${a.color}">
+                            <i class="fas fa-${a.icon}"></i>
+                        </div>
+                        <div class="checkin-info">
+                            <h4>${a.name}</h4>
+                            <p>${a.description}</p>
+                        </div>
+                        <button class="checkin-btn primary" onclick="handleCheckin(${a.id}, this)">
+                            打卡
+                        </button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load abilities:', error);
+            }
+        }
+
+        async function loadTodayCheckins() {
+            try {
+                const response = await fetch('/api/checkin/today');
+                const data = await response.json();
+
+                data.checked_abilities.forEach(abilityId => {
+                    const card = document.querySelector(`.checkin-card[data-ability="${abilityId}"]`);
+                    if (card) {
+                        card.classList.add('checked');
+                        const btn = card.querySelector('.checkin-btn');
+                        btn.className = 'checkin-btn success';
+                        btn.innerHTML = '<i class="fas fa-check"></i> 已打卡';
+                        btn.disabled = true;
+                    }
+                });
+
+                document.getElementById('checkin-count').textContent = `${data.checked_abilities.length}/7`;
+                document.getElementById('streak-days').textContent = data.streak;
+            } catch (error) {
+                console.error('Failed to load today checkins:', error);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats/summary');
+                const data = await response.json();
+
+                document.getElementById('total-checkins').textContent = data.total_checkins;
+                document.getElementById('week-checkins').textContent = data.week_checkins;
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        async function loadRecentAchievements() {
+            try {
+                const response = await fetch('/api/achievements/user');
+                const data = await response.json();
+
+                document.getElementById('achievement-count').textContent = `${data.earned_count}/${data.total}`;
+
+                const container = document.getElementById('achievement-list');
+                if (data.earned && data.earned.length > 0) {
+                    container.innerHTML = data.earned.slice(0, 4).map(a => `
+                        <div class="achievement-item">
+                            <div class="achievement-icon">
+                                <i class="fas fa-${a.icon}"></i>
+                            </div>
+                            <div class="achievement-info">
+                                <h4>${a.name}</h4>
+                                <p>${a.earned_at}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load achievements:', error);
+            }
+        }
+
+        async function loadCalendarData() {
+            try {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+
+                document.getElementById('calendar-month').textContent = `${year}年${month + 1}月`;
+
+                const response = await fetch(`/api/checkin/calendar?year=${year}&month=${month + 1}`);
+                const data = await response.json();
+
+                renderCalendar(year, month, data.daily_exp || {});
+            } catch (error) {
+                console.error('Failed to load calendar:', error);
+                renderCalendar(currentDate.getFullYear(), currentDate.getMonth(), {});
+            }
+        }
+
+        function renderCalendar(year, month, dailyExp) {
+            const container = document.getElementById('calendar-grid');
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+
+            let html = weekdays.map(d => `<div class="calendar-weekday">${d}</div>`).join('');
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+
+            const prevMonthDays = new Date(year, month, 0).getDate();
+            for (let i = firstDay - 1; i >= 0; i--) {
+                html += `<div class="calendar-day other-month"><span class="day-number">${prevMonthDays - i}</span></div>`;
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const exp = dailyExp[dateStr] || 0;
+                const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+
+                html += `
+                    <div class="calendar-day${isToday ? ' today' : ''}">
+                        <span class="day-number">${day}</span>
+                        ${exp > 0 ? `<span class="day-exp">+${exp}</span>` : ''}
+                    </div>
+                `;
+            }
+
+            const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+            const nextDays = totalCells - firstDay - daysInMonth;
+            for (let i = 1; i <= nextDays; i++) {
+                html += `<div class="calendar-day other-month"><span class="day-number">${i}</span></div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function prevMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            loadCalendarData();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            loadCalendarData();
+        }
+
+        function initRadarChart() {
+            radarChart = echarts.init(document.getElementById('radar-chart'));
+
+            fetch('/api/abilities/user')
+                .then(res => res.json())
+                .then(data => {
+                    const option = {
+                        tooltip: { trigger: 'item' },
+                        radar: {
+                            indicator: data.abilities.map(a => ({
+                                name: a.name,
+                                max: 100
+                            })),
+                            radius: '60%',
+                            axisName: {
+                                color: '#666',
+                                fontSize: 11
+                            },
+                            splitLine: {
+                                lineStyle: {
+                                    color: '#e0e0e0'
+                                }
+                            },
+                            splitArea: {
+                                areaStyle: {
+                                    color: ['#fafafa', '#f5f5f5']
+                                }
+                            }
+                        },
+                        series: [{
+                            type: 'radar',
+                            data: [{
+                                value: data.raw_values,
+                                name: '我的能力',
+                                areaStyle: {
+                                    color: 'rgba(102, 126, 234, 0.3)'
+                                },
+                                lineStyle: {
+                                    color: '#667eea',
+                                    width: 2
+                                },
+                                itemStyle: {
+                                    color: '#667eea'
+                                }
+                            }]
+                        }]
+                    };
+                    radarChart.setOption(option);
+                });
+
+            window.addEventListener('resize', () => {
+                radarChart && radarChart.resize();
+            });
+        }
+
+        async function handleCheckin(abilityId, btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const response = await fetch('/api/checkin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ability_id: abilityId })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const card = btn.closest('.checkin-card');
+                    card.classList.add('checked');
+                    btn.className = 'checkin-btn success';
+                    btn.innerHTML = '<i class="fas fa-check"></i> 已打卡';
+
+                    showToast(`打卡成功！+${data.exp_gained} EXP`, 'success');
+
+                    if (data.level_up) {
+                        showToast(`🎉 恭喜升级！当前等级: Lv.${data.new_level}`, 'success');
+                        await loadUserInfo();
+                    }
+
+                    if (data.new_achievements && data.new_achievements.length > 0) {
+                        data.new_achievements.forEach(a => {
+                            showToast(`🏆 获得成就: ${a.name}`, 'success');
+                        });
+                        await loadRecentAchievements();
+                    }
+
+                    await loadTodayCheckins();
+                    await loadStats();
+                    await loadCalendarData();
+
+                    const radarResponse = await fetch('/api/abilities/user');
+                    const radarData = await radarResponse.json();
+                    radarChart.setOption({
+                        series: [{
+                            data: [{
+                                value: radarData.raw_values,
+                                name: '我的能力',
+                                areaStyle: { color: 'rgba(102, 126, 234, 0.3)' },
+                                lineStyle: { color: '#667eea', width: 2 },
+                                itemStyle: { color: '#667eea' }
+                            }]
+                        }]
+                    });
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = '打卡';
+                    showToast(data.error || '打卡失败', 'error');
+                }
+            } catch (error) {
+                btn.disabled = false;
+                btn.innerHTML = '打卡';
+                showToast('网络错误，请重试', 'error');
+            }
+        }
+
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = 'toast ' + type;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        async function handleLogout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/';
+            } catch (error) {
+                showToast('退出失败', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

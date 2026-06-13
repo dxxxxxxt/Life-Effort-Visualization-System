@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}目标管理 - 人生努力可视化系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4><i class="bi bi-bullseye"></i> 目标管理</h4>
+        <button class="btn btn-primary" onclick="showGoalModal()">
+            <i class="bi bi-plus-circle"></i> 新建目标
+        </button>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3 id="active-goals">0</h3>
+                    <small>进行中</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3 id="completed-goals">0</h3>
+                    <small>已完成</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-secondary text-white">
+                <div class="card-body text-center">
+                    <h3 id="total-goals">0</h3>
+                    <small>总目标</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="goals-list">
+    </div>
+
+    <div id="goal-modal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">新建目标</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="goal-id">
+                    <div class="mb-3">
+                        <label class="form-label">目标标题</label>
+                        <input type="text" class="form-control" id="goal-title" placeholder="例如：阅读10本书">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">关联能力</label>
+                        <select class="form-select" id="goal-ability">
+                            <option value="">不关联</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">目标值</label>
+                        <input type="number" class="form-control" id="goal-target" placeholder="例如：10">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">描述</label>
+                        <textarea class="form-control" id="goal-description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">截止日期</label>
+                        <input type="date" class="form-control" id="goal-end-date">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveGoal()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.goal-card {
+    border-radius: 12px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+.goal-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.goal-progress {
+    height: 8px;
+    border-radius: 4px;
+}
+.goal-status-active {
+    border-left: 4px solid #4A90D9;
+}
+.goal-status-completed {
+    border-left: 4px solid #28a745;
+    opacity: 0.8;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let goalModal;
+let abilities = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+    goalModal = new bootstrap.Modal(document.getElementById('goal-modal'));
+    await loadAbilities();
+    await loadGoals();
+});
+
+async function loadAbilities() {
+    try {
+        const response = await fetch('/api/abilities');
+        const data = await response.json();
+        abilities = data.abilities;
+
+        const select = document.getElementById('goal-ability');
+        select.innerHTML = '<option value="">不关联</option>' +
+            abilities.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+    } catch (error) {
+        console.error('Failed to load abilities:', error);
+    }
+}
+
+async function loadGoals() {
+    try {
+        const response = await fetch('/api/goals');
+        const data = await response.json();
+
+        const activeGoals = data.goals.filter(g => g.status === 'active');
+        const completedGoals = data.goals.filter(g => g.status === 'completed');
+
+        document.getElementById('active-goals').textContent = activeGoals.length;
+        document.getElementById('completed-goals').textContent = completedGoals.length;
+        document.getElementById('total-goals').textContent = data.goals.length;
+
+        const container = document.getElementById('goals-list');
+
+        if (data.goals.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center text-muted py-5">
+                    <i class="bi bi-bullseye" style="font-size: 3rem;"></i>
+                    <p class="mt-3">还没有目标，设定一个目标开始努力吧！</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = data.goals.map(goal => {
+            const ability = abilities.find(a => a.id === goal.ability_id);
+            return `
+                <div class="col-md-6 col-lg-4">
+                    <div class="card goal-card goal-status-${goal.status}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-0">${goal.title}</h6>
+                                ${goal.status === 'active' ? `
+                                    <button class="btn btn-sm btn-outline-success" onclick="completeGoal(${goal.id})">
+                                        <i class="bi bi-check"></i>
+                                    </button>
+                                ` : '<span class="badge bg-success">已完成</span>'}
+                            </div>
+                            ${goal.ability_name ? `<small class="text-muted">${goal.ability_name}</small>` : ''}
+                            ${goal.description ? `<p class="small text-muted mt-1">${goal.description}</p>` : ''}
+                            <div class="mt-2">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small>进度: ${goal.current_value}/${goal.target_value}</small>
+                                    <small>${goal.progress}%</small>
+                                </div>
+                                <div class="progress goal-progress">
+                                    <div class="progress-bar bg-primary" style="width: ${goal.progress}%"></div>
+                                </div>
+                            </div>
+                            ${goal.end_date ? `<small class="text-muted">截止: ${goal.end_date}</small>` : ''}
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-outline-primary" onclick="editGoal(${goal.id})">编辑</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteGoal(${goal.id})">删除</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        console.error('Failed to load goals:', error);
+    }
+}
+
+function showGoalModal() {
+    document.getElementById('goal-id').value = '';
+    document.getElementById('goal-title').value = '';
+    document.getElementById('goal-ability').value = '';
+    document.getElementById('goal-target').value = '';
+    document.getElementById('goal-description').value = '';
+    document.getElementById('goal-end-date').value = '';
+    goalModal.show();
+}
+
+async function editGoal(id) {
+    try {
+        const response = await fetch('/api/goals');
+        const data = await response.json();
+        const goal = data.goals.find(g => g.id === id);
+
+        if (goal) {
+            document.getElementById('goal-id').value = goal.id;
+            document.getElementById('goal-title').value = goal.title;
+            document.getElementById('goal-ability').value = goal.ability_id || '';
+            document.getElementById('goal-target').value = goal.target_value;
+            document.getElementById('goal-description').value = goal.description || '';
+            document.getElementById('goal-end-date').value = goal.end_date || '';
+            goalModal.show();
+        }
+    } catch (error) {
+        showToast('加载失败', 'danger');
+    }
+}
+
+async function saveGoal() {
+    const id = document.getElementById('goal-id').value;
+    const title = document.getElementById('goal-title').value;
+    const abilityId = document.getElementById('goal-ability').value;
+    const target = document.getElementById('goal-target').value;
+    const description = document.getElementById('goal-description').value;
+    const endDate = document.getElementById('goal-end-date').value;
+
+    if (!title) {
+        showToast('请输入目标标题', 'warning');
+        return;
+    }
+
+    const url = id ? `/api/goals/${id}` : '/api/goals';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: title,
+                ability_id: abilityId || null,
+                target_value: parseInt(target) || 0,
+                description: description,
+                end_date: endDate || null
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showToast(id ? '更新成功' : '创建成功', 'success');
+            goalModal.hide();
+            await loadGoals();
+        }
+    } catch (error) {
+        showToast('保存失败', 'danger');
+    }
+}
+
+async function completeGoal(id) {
+    try {
+        const response = await fetch(`/api/goals/${id}/complete`, { method: 'PUT' });
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('恭喜完成目标！', 'success');
+            await loadGoals();
+        }
+    } catch (error) {
+        showToast('操作失败', 'danger');
+    }
+}
+
+async function deleteGoal(id) {
+    if (!confirm('确定删除这个目标吗？')) return;
+
+    try {
+        const response = await fetch(`/api/goals/${id}`, { method: 'DELETE' });
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('删除成功', 'success');
+            await loadGoals();
+        }
+    } catch (error) {
+        showToast('删除失败', 'danger');
+    }
+}
+</script>
+{% endblock %}

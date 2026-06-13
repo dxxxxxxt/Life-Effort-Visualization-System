@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}心情日记 - 人生努力可视化系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4><i class="bi bi-journal"></i> 心情日记</h4>
+        <button class="btn btn-primary" onclick="showNoteModal()">
+            <i class="bi bi-plus-circle"></i> 写日记
+        </button>
+    </div>
+
+    <div class="row" id="notes-list">
+    </div>
+
+    <div id="note-modal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">写日记</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="note-id">
+                    <div class="mb-3">
+                        <label class="form-label">标题</label>
+                        <input type="text" class="form-control" id="note-title" placeholder="今天的心情...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">心情</label>
+                        <div class="mood-selector">
+                            <span class="mood-btn" data-mood="1">😢</span>
+                            <span class="mood-btn" data-mood="2">😕</span>
+                            <span class="mood-btn active" data-mood="3">😐</span>
+                            <span class="mood-btn" data-mood="4">😊</span>
+                            <span class="mood-btn" data-mood="5">😄</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">内容</label>
+                        <textarea class="form-control" id="note-content" rows="5" placeholder="记录今天发生的事情..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveNote()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.note-card {
+    border-left: 4px solid #4A90D9;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+.note-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.mood-selector {
+    display: flex;
+    gap: 10px;
+}
+.mood-btn {
+    font-size: 2rem;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: all 0.2s;
+}
+.mood-btn:hover, .mood-btn.active {
+    opacity: 1;
+    transform: scale(1.2);
+}
+.note-date {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+.note-content {
+    white-space: pre-wrap;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentMood = 3;
+let noteModal;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    noteModal = new bootstrap.Modal(document.getElementById('note-modal'));
+    await loadNotes();
+
+    document.querySelectorAll('.mood-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentMood = parseInt(this.dataset.mood);
+        });
+    });
+});
+
+async function loadNotes() {
+    try {
+        const response = await fetch('/api/notes');
+        const data = await response.json();
+
+        const container = document.getElementById('notes-list');
+        if (data.items.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center text-muted py-5">
+                    <i class="bi bi-journal-plus" style="font-size: 3rem;"></i>
+                    <p class="mt-3">还没有日记，开始记录你的生活吧！</p>
+                </div>
+            `;
+            return;
+        }
+
+        const moodEmojis = ['😢', '😕', '😐', '😊', '😄'];
+
+        container.innerHTML = data.items.map(note => `
+            <div class="col-12">
+                <div class="card note-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h5>${moodEmojis[note.mood - 1] || '😐'} ${note.title || '无题'}</h5>
+                            <span class="note-date">${note.date}</span>
+                        </div>
+                        <p class="note-content mt-2">${note.content || ''}</p>
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editNote(${note.id})">
+                                <i class="bi bi-pencil"></i> 编辑
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteNote(${note.id})">
+                                <i class="bi bi-trash"></i> 删除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Failed to load notes:', error);
+    }
+}
+
+function showNoteModal() {
+    document.getElementById('note-id').value = '';
+    document.getElementById('note-title').value = '';
+    document.getElementById('note-content').value = '';
+    currentMood = 3;
+    document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.mood-btn[data-mood="3"]').classList.add('active');
+    noteModal.show();
+}
+
+async function editNote(id) {
+    try {
+        const response = await fetch(`/api/notes/${id}`);
+        const data = await response.json();
+
+        if (data.note) {
+            document.getElementById('note-id').value = data.note.id;
+            document.getElementById('note-title').value = data.note.title || '';
+            document.getElementById('note-content').value = data.note.content || '';
+            currentMood = data.note.mood || 3;
+
+            document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.mood-btn[data-mood="${currentMood}"]`).classList.add('active');
+
+            noteModal.show();
+        }
+    } catch (error) {
+        showToast('加载失败', 'danger');
+    }
+}
+
+async function saveNote() {
+    const id = document.getElementById('note-id').value;
+    const title = document.getElementById('note-title').value;
+    const content = document.getElementById('note-content').value;
+
+    if (!content) {
+        showToast('请输入日记内容', 'warning');
+        return;
+    }
+
+    const url = id ? `/api/notes/${id}` : '/api/notes';
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: title,
+                content: content,
+                mood: currentMood
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showToast(id ? '更新成功' : '保存成功', 'success');
+            noteModal.hide();
+            await loadNotes();
+        }
+    } catch (error) {
+        showToast('保存失败', 'danger');
+    }
+}
+
+async function deleteNote(id) {
+    if (!confirm('确定删除这篇日记吗？')) return;
+
+    try {
+        const response = await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+        const data = await response.json();
+
+        if (data.success) {
+            showToast('删除成功', 'success');
+            await loadNotes();
+        }
+    } catch (error) {
+        showToast('删除失败', 'danger');
+    }
+}
+</script>
+{% endblock %}

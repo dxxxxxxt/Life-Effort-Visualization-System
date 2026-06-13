@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}成就系统 - 人生努力可视化系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h4 class="mb-4"><i class="bi bi-trophy"></i> 成就系统</h4>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-4">
+                    <h2 id="earned-count" class="text-primary">0</h2>
+                    <small class="text-muted">已获成就</small>
+                </div>
+                <div class="col-4">
+                    <h2 id="total-achievements" class="text-secondary">0</h2>
+                    <small class="text-muted">总成就数</small>
+                </div>
+                <div class="col-4">
+                    <h2 id="progress-percent" class="text-success">0%</h2>
+                    <small class="text-muted">完成度</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <h5 class="mb-3"><i class="bi bi-star-fill text-warning"></i> 已获得</h5>
+            <div class="row" id="earned-achievements">
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <h5 class="mb-3"><i class="bi bi-lock text-secondary"></i> 待解锁</h5>
+            <div class="row" id="locked-achievements">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.achievement-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+.achievement-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.achievement-card.earned {
+    background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+    border-color: #ffc107;
+}
+.achievement-card.locked {
+    opacity: 0.6;
+    filter: grayscale(0.5);
+}
+.achievement-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 1.5rem;
+}
+.achievement-card.earned .achievement-icon {
+    background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    color: white;
+}
+.achievement-card.locked .achievement-icon {
+    background: #e0e0e0;
+    color: #999;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadAchievements();
+});
+
+async function loadAchievements() {
+    try {
+        const response = await fetch('/api/achievements/user');
+        const data = await response.json();
+
+        document.getElementById('earned-count').textContent = data.earned_count;
+        document.getElementById('total-achievements').textContent = data.total;
+        document.getElementById('progress-percent').textContent =
+            Math.round(data.earned_count / data.total * 100) + '%';
+
+        const earnedContainer = document.getElementById('earned-achievements');
+        if (data.earned.length > 0) {
+            earnedContainer.innerHTML = data.earned.map(a => `
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="achievement-card earned">
+                        <div class="achievement-icon">
+                            <i class="bi bi-${a.icon}"></i>
+                        </div>
+                        <h6>${a.name}</h6>
+                        <p class="text-muted small mb-1">${a.description}</p>
+                        <small class="text-success">${a.earned_at}</small>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            earnedContainer.innerHTML = '<p class="text-muted">还没有获得成就，继续加油！</p>';
+        }
+
+        const lockedContainer = document.getElementById('locked-achievements');
+        if (data.locked.length > 0) {
+            lockedContainer.innerHTML = data.locked.map(a => `
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="achievement-card locked">
+                        <div class="achievement-icon">
+                            <i class="bi bi-${a.icon}"></i>
+                        </div>
+                        <h6>${a.name}</h6>
+                        <p class="text-muted small mb-0">${a.description}</p>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            lockedContainer.innerHTML = '<p class="text-muted">恭喜！已解锁全部成就！</p>';
+        }
+    } catch (error) {
+        console.error('Failed to load achievements:', error);
+    }
+}
+</script>
+{% endblock %}

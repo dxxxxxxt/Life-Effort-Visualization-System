@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}统计报表 - 人生努力可视化系统{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h4 class="mb-4"><i class="bi bi-graph-up"></i> 统计报表</h4>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-primary active" onclick="loadStats('weekly')">周报</button>
+                <button class="btn btn-outline-primary" onclick="loadStats('monthly')">月报</button>
+                <button class="btn btn-outline-primary" onclick="loadStats('yearly')">年报</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">打卡趋势</div>
+                <div class="card-body">
+                    <div id="trend-chart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">能力分布</div>
+                <div class="card-body">
+                    <div id="pie-chart" style="height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">数据统计</div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-box bg-primary text-white">
+                                <h3 id="stat-total">0</h3>
+                                <small>总打卡数</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-box bg-success text-white">
+                                <h3 id="stat-avg">0</h3>
+                                <small>日均打卡</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-box bg-warning text-white">
+                                <h3 id="stat-top">-</h3>
+                                <small>最多能力</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="stat-box bg-info text-white">
+                                <h3 id="stat-days">0</h3>
+                                <small>活跃天数</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let trendChart = null;
+let pieChart = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    trendChart = echarts.init(document.getElementById('trend-chart'));
+    pieChart = echarts.init(document.getElementById('pie-chart'));
+    loadStats('weekly');
+
+    window.addEventListener('resize', () => {
+        trendChart && trendChart.resize();
+        pieChart && pieChart.resize();
+    });
+});
+
+async function loadStats(type) {
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    let url = `/api/stats/${type}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        document.getElementById('stat-total').textContent = data.total_checkins || 0;
+        document.getElementById('stat-days').textContent = data.daily_counts ? data.daily_counts.length : 0;
+
+        if (data.ability_counts && data.ability_counts.length > 0) {
+            const top = data.ability_counts.reduce((a, b) => a.count > b.count ? a : b);
+            document.getElementById('stat-top').textContent = top.name;
+        }
+
+        const days = type === 'weekly' ? 7 : (type === 'monthly' ? 30 : 365);
+        document.getElementById('stat-avg').textContent = ((data.total_checkins || 0) / days).toFixed(1);
+
+        updateTrendChart(data, type);
+        updatePieChart(data.ability_counts || []);
+    } catch (error) {
+        console.error('Failed to load stats:', error);
+    }
+}
+
+function updateTrendChart(data, type) {
+    let xData, yData;
+
+    if (type === 'yearly') {
+        xData = data.monthly_counts.map(m => `${m.month}月`);
+        yData = data.monthly_counts.map(m => m.count);
+    } else {
+        xData = data.daily_counts.map(d => d.date.slice(5));
+        yData = data.daily_counts.map(d => d.count);
+    }
+
+    const option = {
+        tooltip: { trigger: 'axis' },
+        xAxis: {
+            type: 'category',
+            data: xData,
+            axisLabel: { rotate: 45 }
+        },
+        yAxis: { type: 'value' },
+        series: [{
+            data: yData,
+            type: 'line',
+            smooth: true,
+            areaStyle: { color: 'rgba(74, 144, 217, 0.2)' },
+            lineStyle: { color: '#4A90D9', width: 3 },
+            itemStyle: { color: '#4A90D9' }
+        }]
+    };
+
+    trendChart.setOption(option);
+}
+
+function updatePieChart(data) {
+    const option = {
+        tooltip: { trigger: 'item' },
+        series: [{
+            type: 'pie',
+            radius: '60%',
+            data: data.map(d => ({
+                name: d.name,
+                value: d.count,
+                itemStyle: { color: d.color }
+            })),
+            label: {
+                show: true,
+                formatter: '{b}: {c}'
+            }
+        }]
+    };
+
+    pieChart.setOption(option);
+}
+</script>
+{% endblock %}
